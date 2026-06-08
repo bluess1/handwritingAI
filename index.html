@@ -15,106 +15,252 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 3rem 1.5rem;
+      padding: 2rem 1.5rem 4rem;
     }
 
-    h1 {
-      font-size: 2.5rem;
-      letter-spacing: -0.02em;
-      margin-bottom: 0.35rem;
-    }
-
+    h1 { font-size: 2.5rem; letter-spacing: -0.02em; margin-bottom: 0.35rem; }
     .subtitle {
-      font-size: 0.85rem;
-      color: #9e8e7a;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      font-family: monospace;
-      margin-bottom: 3rem;
+      font-size: 0.8rem; color: #9e8e7a; letter-spacing: 0.12em;
+      text-transform: uppercase; font-family: monospace; margin-bottom: 2rem;
     }
 
-    #dropzone {
-      width: 100%;
-      max-width: 600px;
-      min-height: 220px;
-      border: 2px dashed #d4c9b0;
+    /* ── Mode Tabs ── */
+    .tabs {
+      display: flex; gap: 0; margin-bottom: 1.5rem;
+      border: 1.5px solid #d4c9b0; border-radius: 6px; overflow: hidden;
+      width: 100%; max-width: 600px;
+    }
+    .tab {
+      flex: 1; padding: 0.75rem 1rem; background: transparent;
+      border: none; font-family: Georgia, serif; font-size: 0.95rem;
+      cursor: pointer; color: #9e8e7a; transition: all 0.18s;
+      border-right: 1.5px solid #d4c9b0;
+    }
+    .tab:last-child { border-right: none; }
+    .tab.active { background: #1a1208; color: #f9f6f0; font-style: italic; }
+    .tab:hover:not(.active) { background: rgba(139,105,20,0.06); color: #1a1208; }
+
+    /* ── Panels ── */
+    .panel { width: 100%; max-width: 600px; display: none; }
+    .panel.active { display: block; }
+
+    /* ── Camera Panel ── */
+    .camera-wrap {
+      position: relative; width: 100%; border-radius: 8px;
+      overflow: hidden; background: #111; aspect-ratio: 4/3;
+    }
+    #video {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+
+    /* Document guide overlay */
+    .cam-overlay {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .guide-box {
+      position: absolute;
+      top: 8%; left: 6%; right: 6%; bottom: 8%;
+      border: 2px solid rgba(255,255,255,0.35);
       border-radius: 6px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.2s;
-      padding: 2rem;
-      text-align: center;
-      background: rgba(255,255,255,0.5);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .guide-box.locked {
+      border-color: #4ade80;
+      box-shadow: 0 0 0 3px rgba(74,222,128,0.25);
+    }
+    /* Corner accents */
+    .guide-box::before, .guide-box::after,
+    .guide-inner::before, .guide-inner::after {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-color: inherit;
+      border-style: solid; border-width: 0;
+    }
+    .guide-box::before  { top: -2px; left: -2px;  border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+    .guide-box::after   { top: -2px; right: -2px; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+    .guide-inner::before { bottom: -2px; left: -2px;  border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+    .guide-inner::after  { bottom: -2px; right: -2px; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+
+    /* Status bar inside camera */
+    .cam-status {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(0,0,0,0.7));
+      padding: 1.5rem 1rem 0.75rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .cam-status-text {
+      font-family: monospace; font-size: 0.75rem;
+      color: #fff; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .cam-indicator {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #9e8e7a; flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .cam-indicator.scanning { background: #facc15; animation: pulse 1s infinite; }
+    .cam-indicator.locked   { background: #4ade80; animation: none; }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    /* Countdown ring */
+    .countdown-wrap {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      display: none; flex-direction: column; align-items: center; gap: 0.5rem;
+    }
+    .countdown-wrap.visible { display: flex; }
+    .countdown-ring {
+      position: relative; width: 72px; height: 72px;
+    }
+    .countdown-ring svg { transform: rotate(-90deg); }
+    .countdown-ring circle {
+      fill: none; stroke: #4ade80; stroke-width: 4;
+      stroke-dasharray: 201; stroke-dashoffset: 201;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+    .countdown-num {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: monospace; font-size: 1.6rem; font-weight: bold;
+      color: #fff;
+    }
+    .countdown-label {
+      font-family: monospace; font-size: 0.7rem;
+      color: rgba(255,255,255,0.85); letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
 
-    #dropzone:hover, #dropzone.drag { border-color: #8b6914; background: rgba(139,105,20,0.04); }
-
-    #dropzone p { color: #9e8e7a; margin-top: 0.5rem; font-size: 0.9rem; }
-
-    #dropzone img {
-      max-width: 100%;
-      max-height: 300px;
-      border-radius: 4px;
-      object-fit: contain;
+    /* Flash effect */
+    .flash {
+      position: absolute; inset: 0;
+      background: white; opacity: 0;
+      pointer-events: none; border-radius: 8px;
+      transition: opacity 0.05s;
     }
+    .flash.go { opacity: 1; }
 
-    #fileInput { display: none; }
-
-    button {
-      margin-top: 1.25rem;
-      width: 100%;
-      max-width: 600px;
-      padding: 0.9rem;
-      background: #1a1208;
-      color: #f9f6f0;
-      border: none;
-      font-family: Georgia, serif;
-      font-size: 1rem;
-      font-style: italic;
-      cursor: pointer;
-      border-radius: 4px;
+    /* Camera controls below video */
+    .cam-controls {
+      display: flex; gap: 0.75rem; margin-top: 0.75rem;
+    }
+    .cam-btn {
+      flex: 1; padding: 0.7rem;
+      background: #1a1208; color: #f9f6f0;
+      border: none; font-family: Georgia, serif; font-size: 0.9rem;
+      font-style: italic; cursor: pointer; border-radius: 4px;
       transition: background 0.2s;
     }
+    .cam-btn:hover { background: #8b6914; }
+    .cam-btn.secondary {
+      background: transparent; color: #9e8e7a;
+      border: 1.5px solid #d4c9b0; font-style: normal;
+      font-family: monospace; font-size: 0.75rem; letter-spacing: 0.06em;
+    }
+    .cam-btn.secondary:hover { border-color: #8b6914; color: #1a1208; background: transparent; }
+    #camStartBtn { display: block; }
+    #camStopBtn  { display: none; }
 
-    button:hover:not(:disabled) { background: #8b6914; }
-    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    /* ── Upload Panel ── */
+    #dropzone {
+      width: 100%; min-height: 200px;
+      border: 2px dashed #d4c9b0; border-radius: 6px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; padding: 2rem;
+      text-align: center; background: rgba(255,255,255,0.5);
+    }
+    #dropzone:hover, #dropzone.drag { border-color: #8b6914; background: rgba(139,105,20,0.04); }
+    #dropzone p { color: #9e8e7a; margin-top: 0.5rem; font-size: 0.9rem; }
+    #dropzone img { max-width: 100%; max-height: 260px; border-radius: 4px; object-fit: contain; }
+    #fileInput { display: none; }
 
+    .upload-btn {
+      margin-top: 1.25rem; width: 100%;
+      padding: 0.9rem; background: #1a1208; color: #f9f6f0;
+      border: none; font-family: Georgia, serif; font-size: 1rem;
+      font-style: italic; cursor: pointer; border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .upload-btn:hover:not(:disabled) { background: #8b6914; }
+    .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Result ── */
     #result {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 600px;
-      background: #fffef9;
-      border: 1px solid #d4c9b0;
-      border-radius: 6px;
-      padding: 1.75rem;
-      display: none;
+      margin-top: 2rem; width: 100%; max-width: 600px;
+      background: #fffef9; border: 1px solid #d4c9b0;
+      border-radius: 6px; padding: 1.75rem; display: none;
     }
+    .result-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 1rem;
+      gap: 1rem; flex-wrap: wrap;
+    }
+    .result-header h2 {
+      font-size: 0.85rem; letter-spacing: 0.1em;
+      text-transform: uppercase; font-family: monospace; color: #8b6914;
+    }
+    .confidence-badge {
+      font-family: monospace; font-size: 0.78rem;
+      padding: 0.25rem 0.65rem; border-radius: 20px;
+      font-weight: bold; letter-spacing: 0.04em;
+    }
+    .conf-high { background:#e8f5e9; color:#2e7d32; border:1px solid #a5d6a7; }
+    .conf-mid  { background:#fff8e1; color:#f57f17; border:1px solid #ffe082; }
+    .conf-low  { background:#fce4ec; color:#c62828; border:1px solid #ef9a9a; }
 
-    #result h2 {
-      font-size: 1rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      font-family: monospace;
-      color: #8b6914;
-      margin-bottom: 1rem;
+    .legend {
+      display: flex; gap: 1rem; margin-bottom: 1.1rem; flex-wrap: wrap;
     }
+    .legend-item {
+      display: flex; align-items: center; gap: 0.35rem;
+      font-family: monospace; font-size: 0.7rem; color: #9e8e7a;
+    }
+    .legend-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
 
     #output {
-      white-space: pre-wrap;
-      font-size: 1.05rem;
-      line-height: 1.85;
-      color: #1a1208;
+      font-size: 1.05rem; line-height: 2.1;
+      color: #1a1208; white-space: pre-wrap; word-break: break-word;
     }
+    .word { display: inline; }
+    .uncertain { display: inline-block; position: relative; cursor: help; }
+    .uncertain .word-text { border-bottom: 2px solid; padding-bottom: 1px; }
+    .tier-medium .word-text { border-color: #f59e0b; color: #92400e; }
+    .tier-low    .word-text { border-color: #ef4444; color: #991b1b; }
+    .uncertain .warn-icon { font-size:0.65rem; vertical-align:super; margin-left:1px; opacity:0.75; }
+    .tier-medium .warn-icon { color:#d97706; }
+    .tier-low    .warn-icon { color:#dc2626; }
+    .conf-pill {
+      display:inline-block; font-family:monospace; font-size:0.6rem;
+      padding:1px 4px; border-radius:3px; margin-left:2px;
+      vertical-align:middle; line-height:1.6;
+    }
+    .tier-medium .conf-pill { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+    .tier-low    .conf-pill { background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; }
+    .uncertain .tooltip {
+      display:none; position:absolute; bottom:calc(100% + 6px); left:50%;
+      transform:translateX(-50%); background:#1a1208; color:#f9f6f0;
+      font-family:monospace; font-size:0.72rem; white-space:nowrap;
+      padding:0.4rem 0.7rem; border-radius:4px; z-index:10;
+      pointer-events:none; line-height:1.5;
+    }
+    .uncertain .tooltip::after {
+      content:''; position:absolute; top:100%; left:50%;
+      transform:translateX(-50%);
+      border:5px solid transparent; border-top-color:#1a1208;
+    }
+    .uncertain:hover .tooltip { display:block; }
 
     #error {
-      margin-top: 1rem;
-      color: #c4440a;
-      font-size: 0.9rem;
-      display: none;
+      margin-top: 1rem; width: 100%; max-width: 600px;
+      color: #c4440a; font-size: 0.9rem; display: none;
     }
+
+    #processingMsg {
+      margin-top: 1rem; width: 100%; max-width: 600px;
+      font-family: monospace; font-size: 0.8rem; color: #8b6914;
+      letter-spacing: 0.06em; text-align: center; display: none;
+    }
+
+    canvas { display: none; }
   </style>
 </head>
 <body>
@@ -122,58 +268,281 @@
   <h1>✒ Scribe</h1>
   <p class="subtitle">Handwriting Decoder · Powered by Groq AI</p>
 
-  <div id="dropzone" onclick="document.getElementById('fileInput').click()">
-    <input type="file" id="fileInput" accept="image/*" />
-    <span style="font-size:2.5rem">📄</span>
-    <p>Drop an image here or click to upload</p>
-    <p style="font-size:0.75rem; margin-top:0.25rem">JPG · PNG · WEBP</p>
+  <!-- Mode Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('camera')">📷 Scan with Camera</button>
+    <button class="tab" onclick="switchTab('upload')">📁 Upload File</button>
   </div>
 
-  <button id="decodeBtn" onclick="decode()" disabled>Decode Handwriting</button>
+  <!-- Camera Panel -->
+  <div class="panel active" id="cameraPanel">
+    <div class="camera-wrap" id="cameraWrap">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+
+      <div class="cam-overlay">
+        <div class="guide-box" id="guideBox">
+          <div class="guide-inner"></div>
+        </div>
+      </div>
+
+      <div class="countdown-wrap" id="countdownWrap">
+        <div class="countdown-ring">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="32" id="countdownCircle"/>
+          </svg>
+          <div class="countdown-num" id="countdownNum">3</div>
+        </div>
+        <div class="countdown-label">Hold steady…</div>
+      </div>
+
+      <div class="flash" id="flash"></div>
+
+      <div class="cam-status">
+        <span class="cam-status-text" id="camStatusText">Camera off</span>
+        <span class="cam-indicator" id="camIndicator"></span>
+      </div>
+    </div>
+
+    <div class="cam-controls">
+      <button class="cam-btn" id="camStartBtn" onclick="startCamera()">Start Camera</button>
+      <button class="cam-btn" id="camStopBtn" onclick="stopCamera()">Stop Camera</button>
+      <button class="cam-btn secondary" id="camSnapBtn" onclick="snapNow()" style="display:none">Snap Now</button>
+    </div>
+  </div>
+
+  <!-- Upload Panel -->
+  <div class="panel" id="uploadPanel">
+    <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept="image/*" />
+      <span style="font-size:2.5rem">📄</span>
+      <p>Drop an image here or click to upload</p>
+      <p style="font-size:0.75rem; margin-top:0.25rem">JPG · PNG · WEBP</p>
+    </div>
+    <button class="upload-btn" id="decodeBtn" onclick="decodeUpload()" disabled>Decode Handwriting</button>
+  </div>
+
+  <p id="processingMsg">⟳ Decoding handwriting…</p>
   <p id="error"></p>
 
   <div id="result">
-    <h2>Transcription</h2>
-    <pre id="output"></pre>
+    <div class="result-header">
+      <h2>Transcription</h2>
+      <span id="overallBadge" class="confidence-badge"></span>
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#fef3c7;border:1px solid #fcd34d"></div>
+        <span>~70% confident (best guess)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#fee2e2;border:1px solid #fca5a5"></div>
+        <span>&lt;50% confident (uncertain)</span>
+      </div>
+    </div>
+    <div id="output"></div>
   </div>
 
   <script>
-    let b64 = null, mime = null;
+    // ── State ──────────────────────────────────────────────
+    let b64Upload = null, mimeUpload = null;
+    let stream = null, motionTimer = null, countdownTimer = null;
+    let lastFrameData = null, steadyMs = 0;
+    let isDecoding = false;
 
-    const dropzone = document.getElementById("dropzone");
+    const STEADY_THRESHOLD = 18;   // pixel diff per channel to count as "moved"
+    const STEADY_HOLD_MS   = 1800; // ms paper must be still before countdown starts
+    const COUNTDOWN_SEC    = 2;    // seconds of countdown before snap
+
+    // ── Tab switching ──────────────────────────────────────
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach((t,i) => t.classList.toggle("active", (i===0) === (tab==="camera")));
+      document.getElementById("cameraPanel").classList.toggle("active", tab === "camera");
+      document.getElementById("uploadPanel").classList.toggle("active", tab === "upload");
+      if (tab !== "camera") stopCamera();
+    }
+
+    // ── Camera ─────────────────────────────────────────────
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        const video = document.getElementById("video");
+        video.srcObject = stream;
+        await video.play();
+
+        document.getElementById("camStartBtn").style.display = "none";
+        document.getElementById("camStopBtn").style.display  = "block";
+        document.getElementById("camSnapBtn").style.display  = "block";
+
+        setStatus("scanning", "Searching for document…");
+        startMotionDetection();
+      } catch(e) {
+        showError("Camera access denied. Please allow camera permissions and try again.");
+      }
+    }
+
+    function stopCamera() {
+      if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+      clearInterval(motionTimer);
+      clearTimeout(countdownTimer);
+      cancelCountdown();
+      document.getElementById("video").srcObject = null;
+      document.getElementById("camStartBtn").style.display = "block";
+      document.getElementById("camStopBtn").style.display  = "none";
+      document.getElementById("camSnapBtn").style.display  = "none";
+      setStatus("off", "Camera off");
+    }
+
+    function setStatus(state, text) {
+      document.getElementById("camStatusText").textContent = text;
+      const ind = document.getElementById("camIndicator");
+      ind.className = "cam-indicator" + (state === "scanning" ? " scanning" : state === "locked" ? " locked" : "");
+      const guide = document.getElementById("guideBox");
+      guide.classList.toggle("locked", state === "locked");
+    }
+
+    // ── Motion detection via canvas sampling ──────────────
+    function startMotionDetection() {
+      const video  = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx    = canvas.getContext("2d");
+      const SAMPLE = 80; // sample at low res for speed
+
+      motionTimer = setInterval(() => {
+        if (!stream || isDecoding) return;
+        if (video.readyState < 2) return;
+
+        canvas.width  = SAMPLE;
+        canvas.height = SAMPLE;
+        ctx.drawImage(video, 0, 0, SAMPLE, SAMPLE);
+        const frame = ctx.getImageData(0, 0, SAMPLE, SAMPLE).data;
+
+        if (lastFrameData) {
+          let diff = 0;
+          // Sample every 4th pixel (R channel only) for speed
+          for (let i = 0; i < frame.length; i += 16) {
+            diff += Math.abs(frame[i] - lastFrameData[i]);
+          }
+          const avgDiff = diff / (frame.length / 16);
+
+          if (avgDiff < STEADY_THRESHOLD) {
+            // Paper is steady
+            if (!document.getElementById("countdownWrap").classList.contains("visible")) {
+              steadyMs += 100;
+              if (steadyMs >= STEADY_HOLD_MS) {
+                setStatus("locked", "Document detected — hold still");
+                startCountdown();
+              } else {
+                setStatus("scanning", "Hold steady…");
+              }
+            }
+          } else {
+            // Movement detected
+            steadyMs = 0;
+            cancelCountdown();
+            if (!isDecoding) setStatus("scanning", "Searching for document…");
+          }
+        }
+
+        lastFrameData = new Uint8ClampedArray(frame);
+      }, 100);
+    }
+
+    // ── Countdown ─────────────────────────────────────────
+    function startCountdown() {
+      if (document.getElementById("countdownWrap").classList.contains("visible")) return;
+      document.getElementById("countdownWrap").classList.add("visible");
+
+      let remaining = COUNTDOWN_SEC;
+      const circle  = document.getElementById("countdownCircle");
+      const numEl   = document.getElementById("countdownNum");
+      const circumf = 201;
+
+      const tick = () => {
+        numEl.textContent = remaining;
+        const progress = 1 - (remaining / COUNTDOWN_SEC);
+        circle.style.strokeDashoffset = circumf * (1 - progress);
+
+        if (remaining <= 0) {
+          snapNow();
+          return;
+        }
+        remaining -= 1;
+        countdownTimer = setTimeout(tick, 1000);
+      };
+      tick();
+    }
+
+    function cancelCountdown() {
+      clearTimeout(countdownTimer);
+      document.getElementById("countdownWrap").classList.remove("visible");
+      document.getElementById("countdownCircle").style.strokeDashoffset = 201;
+    }
+
+    // ── Snap & send ────────────────────────────────────────
+    function snapNow() {
+      if (isDecoding) return;
+      const video  = document.getElementById("video");
+      const canvas = document.getElementById("canvas");
+      const ctx    = canvas.getContext("2d");
+
+      canvas.width  = video.videoWidth  || 1280;
+      canvas.height = video.videoHeight || 720;
+      ctx.drawImage(video, 0, 0);
+
+      // Flash
+      const flash = document.getElementById("flash");
+      flash.classList.add("go");
+      setTimeout(() => flash.classList.remove("go"), 150);
+
+      cancelCountdown();
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      decodeImage(dataUrl.split(",")[1], "image/jpeg");
+    }
+
+    // ── Upload panel ──────────────────────────────────────
+    const dropzone  = document.getElementById("dropzone");
     const fileInput = document.getElementById("fileInput");
-    const btn = document.getElementById("decodeBtn");
 
     fileInput.addEventListener("change", e => loadFile(e.target.files[0]));
-
     dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("drag"); });
     dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
     dropzone.addEventListener("drop", e => {
-      e.preventDefault();
-      dropzone.classList.remove("drag");
+      e.preventDefault(); dropzone.classList.remove("drag");
       loadFile(e.dataTransfer.files[0]);
     });
 
     function loadFile(file) {
       if (!file || !file.type.startsWith("image/")) return;
-      mime = file.type;
+      mimeUpload = file.type;
       const reader = new FileReader();
       reader.onload = e => {
-        const data = e.target.result;
-        b64 = data.split(",")[1];
-        dropzone.innerHTML = `<img src="${data}" />`;
-        btn.disabled = false;
+        const src = e.target.result;
+        b64Upload = src.split(",")[1];
+        dropzone.innerHTML = `<img src="${src}" />`;
+        document.getElementById("decodeBtn").disabled = false;
         document.getElementById("result").style.display = "none";
-        document.getElementById("error").style.display = "none";
+        hideError();
       };
       reader.readAsDataURL(file);
     }
 
-    async function decode() {
-      if (!b64) return;
-      btn.disabled = true;
-      btn.textContent = "Decoding…";
-      document.getElementById("error").style.display = "none";
+    function decodeUpload() {
+      if (b64Upload) decodeImage(b64Upload, mimeUpload || "image/jpeg");
+    }
+
+    // ── Core decode ───────────────────────────────────────
+    async function decodeImage(b64, mime) {
+      if (isDecoding) return;
+      isDecoding = true;
+      hideError();
+      clearInterval(motionTimer);
+
+      document.getElementById("processingMsg").style.display = "block";
+      document.getElementById("result").style.display = "none";
+      if (stream) setStatus("scanning", "Processing…");
 
       try {
         const res = await fetch("/decode", {
@@ -183,16 +552,65 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
-        document.getElementById("output").textContent = data.transcription;
-        document.getElementById("result").style.display = "block";
-      } catch (err) {
-        const el = document.getElementById("error");
-        el.textContent = "⚠ " + err.message;
-        el.style.display = "block";
+        if (!data.words) throw new Error("Unexpected response format");
+        renderWords(data.words, data.overall_confidence ?? "?");
+      } catch(err) {
+        showError("⚠ " + err.message);
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Decode Handwriting";
+        isDecoding = false;
+        document.getElementById("processingMsg").style.display = "none";
+        if (stream) {
+          lastFrameData = null;
+          steadyMs = 0;
+          setStatus("scanning", "Searching for document…");
+          startMotionDetection();
+        }
       }
+    }
+
+    // ── Render result ─────────────────────────────────────
+    function renderWords(words, overall) {
+      const badge = document.getElementById("overallBadge");
+      badge.textContent = `Overall confidence: ${overall}%`;
+      badge.className = "confidence-badge " + (overall >= 80 ? "conf-high" : overall >= 60 ? "conf-mid" : "conf-low");
+
+      let html = "";
+      words.forEach(token => {
+        if (token.newline) { html += "\n"; return; }
+        const conf  = token.confidence ?? 100;
+        const text  = token.text ?? "";
+        const guess = token.guess;
+
+        if (conf >= 70 || !guess) {
+          html += `<span class="word">${esc(text)} </span>`;
+        } else {
+          const tier = conf < 50 ? "tier-low" : "tier-medium";
+          const tip  = conf < 50
+            ? `Low confidence (${conf}%) · best guess from context`
+            : `Moderate confidence (${conf}%) · inferred from context`;
+          html += `<span class="uncertain ${tier}">` +
+            `<span class="word-text">${esc(guess)}</span>` +
+            `<span class="conf-pill">${conf}%</span>` +
+            `<span class="warn-icon">⚠</span>` +
+            `<span class="tooltip">${tip}</span>` +
+            `</span> `;
+        }
+      });
+
+      document.getElementById("output").innerHTML = html;
+      document.getElementById("result").style.display = "block";
+      document.getElementById("result").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function esc(s) {
+      return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+    function showError(msg) {
+      const el = document.getElementById("error");
+      el.textContent = msg; el.style.display = "block";
+    }
+    function hideError() {
+      document.getElementById("error").style.display = "none";
     }
   </script>
 </body>
