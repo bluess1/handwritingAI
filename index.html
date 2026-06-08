@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scribe — Handwriting Decoder</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, serif;
+      background: #f9f6f0;
+      color: #1a1208;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #9e8e7a;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-family: monospace;
+      margin-bottom: 3rem;
+    }
+
+    #dropzone {
+      width: 100%;
+      max-width: 600px;
+      min-height: 220px;
+      border: 2px dashed #d4c9b0;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 2rem;
+      text-align: center;
+      background: rgba(255,255,255,0.5);
+    }
+
+    #dropzone:hover, #dropzone.drag { border-color: #8b6914; background: rgba(139,105,20,0.04); }
+
+    #dropzone p { color: #9e8e7a; margin-top: 0.5rem; font-size: 0.9rem; }
+
+    #dropzone img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 4px;
+      object-fit: contain;
+    }
+
+    #fileInput { display: none; }
+
+    button {
+      margin-top: 1.25rem;
+      width: 100%;
+      max-width: 600px;
+      padding: 0.9rem;
+      background: #1a1208;
+      color: #f9f6f0;
+      border: none;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      font-style: italic;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    button:hover:not(:disabled) { background: #8b6914; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    #result {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 600px;
+      background: #fffef9;
+      border: 1px solid #d4c9b0;
+      border-radius: 6px;
+      padding: 1.75rem;
+      display: none;
+    }
+
+    #result h2 {
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: monospace;
+      color: #8b6914;
+      margin-bottom: 1rem;
+    }
+
+    #output {
+      white-space: pre-wrap;
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: #1a1208;
+    }
+
+    #error {
+      margin-top: 1rem;
+      color: #c4440a;
+      font-size: 0.9rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>✒ Scribe</h1>
+  <p class="subtitle">Handwriting Decoder · Powered by Groq AI</p>
+
+  <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept="image/*" />
+    <span style="font-size:2.5rem">📄</span>
+    <p>Drop an image here or click to upload</p>
+    <p style="font-size:0.75rem; margin-top:0.25rem">JPG · PNG · WEBP</p>
+  </div>
+
+  <button id="decodeBtn" onclick="decode()" disabled>Decode Handwriting</button>
+  <p id="error"></p>
+
+  <div id="result">
+    <h2>Transcription</h2>
+    <pre id="output"></pre>
+  </div>
+
+  <script>
+    let b64 = null, mime = null;
+
+    const dropzone = document.getElementById("dropzone");
+    const fileInput = document.getElementById("fileInput");
+    const btn = document.getElementById("decodeBtn");
+
+    fileInput.addEventListener("change", e => loadFile(e.target.files[0]));
+
+    dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("drag"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropzone.classList.remove("drag");
+      loadFile(e.dataTransfer.files[0]);
+    });
+
+    function loadFile(file) {
+      if (!file || !file.type.startsWith("image/")) return;
+      mime = file.type;
+      const reader = new FileReader();
+      reader.onload = e => {
+        const data = e.target.result;
+        b64 = data.split(",")[1];
+        dropzone.innerHTML = `<img src="${data}" />`;
+        btn.disabled = false;
+        document.getElementById("result").style.display = "none";
+        document.getElementById("error").style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function decode() {
+      if (!b64) return;
+      btn.disabled = true;
+      btn.textContent = "Decoding…";
+      document.getElementById("error").style.display = "none";
+
+      try {
+        const res = await fetch("/decode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: b64, mime })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed");
+        document.getElementById("output").textContent = data.transcription;
+        document.getElementById("result").style.display = "block";
+      } catch (err) {
+        const el = document.getElementById("error");
+        el.textContent = "⚠ " + err.message;
+        el.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Decode Handwriting";
+      }
+    }
+  </script>
+</body>
+</html>
