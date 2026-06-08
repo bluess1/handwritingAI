@@ -308,6 +308,7 @@
       <button class="cam-btn" id="camStartBtn" onclick="startCamera()">Start Camera</button>
       <button class="cam-btn" id="camStopBtn" onclick="stopCamera()">Stop Camera</button>
       <button class="cam-btn secondary" id="camSnapBtn" onclick="snapNow()" style="display:none">Snap Now</button>
+      <button class="cam-btn" id="camScanAgainBtn" onclick="resumeScanning()" style="display:none">↺ Scan Again</button>
     </div>
   </div>
 
@@ -481,6 +482,18 @@
       document.getElementById("countdownCircle").style.strokeDashoffset = 201;
     }
 
+    // ── Resume scanning after a completed scan ────────────
+    function resumeScanning() {
+      lastFrameData = null;
+      steadyMs = 0;
+      document.getElementById("camScanAgainBtn").style.display = "none";
+      document.getElementById("camSnapBtn").style.display = "block";
+      document.getElementById("result").style.display = "none";
+      hideError();
+      setStatus("scanning", "Searching for document…");
+      startMotionDetection();
+    }
+
     // ── Snap & send ────────────────────────────────────────
     function snapNow() {
       if (isDecoding) return;
@@ -552,7 +565,7 @@
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed");
-        if (!data.words) throw new Error("Unexpected response format");
+        if (!data.words) throw new Error("No text found in image — try better lighting or hold the paper flatter");
         renderWords(data.words, data.overall_confidence ?? "?");
       } catch(err) {
         showError("⚠ " + err.message);
@@ -560,10 +573,10 @@
         isDecoding = false;
         document.getElementById("processingMsg").style.display = "none";
         if (stream) {
-          lastFrameData = null;
-          steadyMs = 0;
-          setStatus("scanning", "Searching for document…");
-          startMotionDetection();
+          // Pause scanning — wait for user to press Scan Again
+          setStatus("off", "Scan complete");
+          document.getElementById("camSnapBtn").style.display = "none";
+          document.getElementById("camScanAgainBtn").style.display = "block";
         }
       }
     }
